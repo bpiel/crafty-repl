@@ -28,6 +28,8 @@
   
   (def ctx (bl/setup-context (first (.getOnlinePlayers (bk/server)))))
 
+  (def player (first (.getOnlinePlayers (bk/server))))
+
   (clojure.pprint/pprint ctx)
 
   (def loc (:origin ctx))
@@ -72,16 +74,42 @@
 
   (.runTask br2 @plugin)
 
+  (def x& (atom nil))
+
+  (def fireball-type @x&)
+
   (.runTask
    (btsk/bukkit-runnable
     (fn [& _]
-      (dotimes [_ 10]
+      (dotimes [_ 4]
         (Thread/sleep 1000)
-        (let [v1 (buk-vec 10 10 10)
-              p1 (.spawnEntity w loc EntityType/PIG )]
-          (.setVelocity p1 v1)))))
+        (let [v1 (buk-vec 0 2 0)
+              p1 (.launchProjectile player fireball-type)]
+          (.setIsIncendiary p1 true)
+          (.setFireTicks p1 10000)
+          (.setBounce p1 true)
+#_          (reset! x& (type p1))
+          (.setDirection p1 v1)))))
+   @plugin)
+  
+  (.runTask
+   (btsk/bukkit-runnable
+    (fn [& _]
+      (dotimes [_ 4]
+        (Thread/sleep 1000)
+        (let [v1 (buk-vec 0 2 0)
+              p1 (.spawnEntity w loc EntityType/FIREBALL)]
+          #_          (.setPassenger p1 player)
+          (.setIsIncendiary p1 true)
+          (.setFireTicks p1 10000)
+          (.setBounce p1 true)
+          (reset! x& (type p1))
+          (.setDirection p1 v1)))))
    @plugin)
 
+
+  
+  
   (let [ctx (bl/setup-context (first (.getOnlinePlayers (bk/server))))
         loc (:origin ctx)
         x (.getBlockX loc)
@@ -116,7 +144,7 @@
                                  lx (+ x (/ (Math/sin j')
                                             2))
                                  lz (+ z (/ (Math/cos j')
-                                           2))]
+                                            2))]
                              (.spawnEntity w
                                            (Location. w
                                                       lx
