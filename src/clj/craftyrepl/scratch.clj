@@ -88,8 +88,29 @@
           (.setIsIncendiary p1 true)
           (.setFireTicks p1 10000)
           (.setBounce p1 true)
-#_          (reset! x& (type p1))
+          #_          (reset! x& (type p1))
           (.setDirection p1 v1)))))
+   @plugin)
+
+  (def ex& (atom nil))
+
+  (.runTask
+   (btsk/bukkit-runnable
+    (fn [& _]
+      (try
+        (let [player (first (.getOnlinePlayers (bk/server)))
+              ctx (bl/setup-context (first (.getOnlinePlayers (bk/server))))]
+          (dotimes [_ 4]
+            (Thread/sleep 1000)
+            (let [v1 (buk-vec 0 2 0)
+                  p1 (.launchProjectile player pig-type)]
+              (.setIsIncendiary p1 true)
+              (.setFireTicks p1 10000)
+              (.setBounce p1 true)
+              #_          (reset! x& (type p1))
+              #_(.setDirection p1 v1))))
+        (catch Throwable t
+          (reset! ex& t)))))
    @plugin)
   
   (.runTask
@@ -108,22 +129,31 @@
    @plugin)
 
 
+  (def pig-type& (atom nil))
+  (def pig-type @pig-type&)
   
-  
-  (let [ctx (bl/setup-context (first (.getOnlinePlayers (bk/server))))
+  (let [pl1 (first (.getOnlinePlayers (bk/server)))
+        ctx (bl/setup-context pl1)
+        dir (-> pl1 .getLocation .getDirection)
         loc (:origin ctx)
+        w (.getWorld loc)
         x (.getBlockX loc)
         y (.getBlockY loc)
         z (.getBlockZ loc)]
-    (dotimes [_ 1]
-      (Thread/sleep 1000)
+    (dotimes [_ 5]
+      (Thread/sleep 2000)
       (let [bt1 (btsk/bukkit-runnable
                  (fn [& _]
-                   (let [v1 (buk-vec 2 2 2)
-                         p1 (.spawnEntity w loc EntityType/PIG )]
-                     (.setVelocity p1 v1))))]
+                   (try
+                     (let [v1 (buk-vec -20. 0.1 0.)
+                           p1 (.spawnEntity w loc EntityType/PIG )]
+                       (.setFireTicks p1 10000)
+                       (.setVelocity p1 dir))
+                     (catch Throwable t
+                       (reset! ex& t)))))]
         (.runTask bt1 @plugin))))
 
+  (reset! ex& nil)
   
   (let [ctx (bl/setup-context (first (.getOnlinePlayers (bk/server))))
         loc (:origin ctx)
